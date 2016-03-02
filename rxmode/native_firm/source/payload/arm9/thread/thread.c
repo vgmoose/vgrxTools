@@ -30,7 +30,63 @@
 #endif
 #include "lib.c"
 
+#include <wchar.h>
+#include <stdio.h>
+ 
+#define VRAM (unsigned char*)0x18000000
+#define FCRAM (unsigned char*)0x20000000
+#define ARM9_RAM (unsigned char*)0x8000000
+#define TOP_FRAME 0
+#define BOT_FRAME 1
+ 
+unsigned char handle[32];
+unsigned char bmpHead[] = {    
+        0x42, 0x4D, 0x36, 0x65, 0x04, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x36, 0x00, 0x00, 0x00, 0x28, 0x00,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0xF0, 0x00,
+        0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x65, 0x04, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+ 
+void transpose (void * dst, const void * src, unsigned dim1, unsigned dim2, unsigned item_length) {
+  char * ptr_write;
+  const char * ptr_read;
+  unsigned x, y, z;
+  for (x = 0; x < dim1; x ++) for (y = 0; y < dim2; y ++) {
+    ptr_write = ((char *) dst) + item_length * (y * dim1 + x);
+    ptr_read = ((const char *) src) + item_length * (x * dim2 + y);
+    for (z = 0; z < item_length; z ++) *(ptr_write ++) = *(ptr_read ++);
+  }
+}
+ 
+void screenShot(int frame, int count){
+    unsigned int br = 0;
+    short width = frame == 0 ? 400 : 320;
+    short height = 240;
+    int frameOff = frame == 0 ? 0x300000 : 0; //0x1E6000 : 0x48F000;  //<- Defaults
+    int length = frame == 0 ? 0x46500 : 0x38400;
+   
+//	wchar_t tmp[255];
+
+//	swprintf(tmp, 255, L"sdmc:/capture_%d.bmp", count);
+	
+	wchar_t * tmp = L"sdmc:/capture.bmp";
+	P9File f;
+	p9FileInit(f);
+	p9Open(f, tmp, 6);
+    transpose(FCRAM+0xF80000, VRAM+frameOff, width, height, 3);
+    bmpHead[18] = frame == 0 ? 0x90 : 0x40;
+    p9Write(f, &br, bmpHead, 0x36);
+    p9Write(f, &br, FCRAM+0xF80000, length);
+    p9Close(f);
+    for(int i = 0; i < length; i++) *(VRAM+frameOff + i) = 0xFF;
+}
+
+
 //#define DEBUG_DUMP_RAM              //Uncomment this to enable RAM (fcram+axiwram) dumper
+
 
 #ifdef DEBUG_DUMP_RAM
 static void memdump(wchar_t *filename, unsigned char *buf, size_t size)
@@ -56,8 +112,8 @@ static void memdump(wchar_t *filename, unsigned char *buf, size_t size)
 static void patchLabel()
 {
 	static const char verOrig[VER_LEN] = "Ver.";
-	static const char verEmu[VER_LEN] = "RX-E";
-	static const char verSys[VER_LEN] = "RX-S";
+	static const char verEmu[VER_LEN] = "VG-E";
+	static const char verSys[VER_LEN] = "VG-S";
 	uintptr_t top, btm;
 	wchar_t *p;
 	const char *src;
@@ -271,6 +327,7 @@ _Noreturn void thread()
 	#endif
 #endif
 
+	int frames = 0;
 	while (1) {
 
 #ifdef DEBUG_DUMP_RAM
@@ -286,5 +343,9 @@ _Noreturn void thread()
 #endif
 
 		patchLabel();
+		frames ++;
+		if (getHID() & BUTTON_START) {
+			screenShot(0, frames);
+		}
 	}
 }

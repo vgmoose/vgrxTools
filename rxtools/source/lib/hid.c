@@ -23,7 +23,7 @@
 
 static void bgWork()
 {
-	TryScreenShot();
+//	TryScreenShot();
 
 	// Check whether HOME or POWER button has been pressed
 	if (*(volatile uint8_t *)0x10147021 == 13) {

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2015 The PASTA Team
  *
@@ -18,7 +19,6 @@
 #ifndef SCREENSHOT_H
 #define SCREENSHOT_H
 
-void ScreenShot();
-void TryScreenShot();
+void ScreenShot(int frame);
 
 #endif
