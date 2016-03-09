@@ -68,11 +68,10 @@ void screenShot(int frame, int count){
     int frameOff = frame == 0 ? 0x300000 : 0; //0x1E6000 : 0x48F000;  //<- Defaults
     int length = frame == 0 ? 0x46500 : 0x38400;
    
-//	wchar_t tmp[255];
-
-//	swprintf(tmp, 255, L"sdmc:/capture_%d.bmp", count);
+	wchar_t tmp[100];
+	swprintf(tmp, 100, L"sdmc:/img/%d/capture.bmp", count);
 	
-	wchar_t * tmp = L"sdmc:/capture.bmp";
+//	wchar_t * tmp = L"sdmc:/capture.bmp";
 	P9File f;
 	p9FileInit(f);
 	p9Open(f, tmp, 6);
@@ -81,7 +80,7 @@ void screenShot(int frame, int count){
     p9Write(f, &br, bmpHead, 0x36);
     p9Write(f, &br, FCRAM+0xF80000, length);
     p9Close(f);
-    for(int i = 0; i < length; i++) *(VRAM+frameOff + i) = 0xFF;
+//    for(int i = 0; i < length; i++) *(VRAM+frameOff + i) = 0xFF;
 }
 
 
@@ -111,44 +110,44 @@ static void memdump(wchar_t *filename, unsigned char *buf, size_t size)
 
 static void patchLabel()
 {
-	static const char verOrig[VER_LEN] = "Ver.";
-	static const char verEmu[VER_LEN] = "VG-E";
-	static const char verSys[VER_LEN] = "VG-S";
-	uintptr_t top, btm;
-	wchar_t *p;
-	const char *src;
-	unsigned int i;
-
-#ifdef PLATFORM_KTR
-	top = 0x27500000;
-	btm = 0x27B00000;
-#else
-	top = 0x23A00000;
-	btm = 0x24000000;
-#endif
-
-	p = (wchar_t *)top;
-	while ((uintptr_t)(p + VER_LEN) < btm) {
-		if (*p == verOrig[0]) {
-			i = 0;
-			while (*p == verOrig[i]) {
-				i++;
-				if (i == VER_LEN) {
-					src = nandSector > 0 ? verEmu : verSys;
-					while (i > 0) {
-						i--;
-						*p = src[i];
-						p--;
-					}
-
-					return;
-				}
-
-				p++;
-			}
-		} else
-			p++;
-	}
+//	static const char verOrig[VER_LEN] = "Ver.";
+//	static const char verEmu[VER_LEN] = "VG-E";
+//	static const char verSys[VER_LEN] = "VG-S";
+//	uintptr_t top, btm;
+//	wchar_t *p;
+//	const char *src;
+//	unsigned int i;
+//
+//#ifdef PLATFORM_KTR
+//	top = 0x27500000;
+//	btm = 0x27B00000;
+//#else
+//	top = 0x23A00000;
+//	btm = 0x24000000;
+//#endif
+//
+//	p = (wchar_t *)top;
+//	while ((uintptr_t)(p + VER_LEN) < btm) {
+//		if (*p == verOrig[0]) {
+//			i = 0;
+//			while (*p == verOrig[i]) {
+//				i++;
+//				if (i == VER_LEN) {
+//					src = nandSector > 0 ? verEmu : verSys;
+//					while (i > 0) {
+//						i--;
+//						*p = src[i];
+//						p--;
+//					}
+//
+//					return;
+//				}
+//
+//				p++;
+//			}
+//		} else
+//			p++;
+//	}
 }
 
 #ifndef PLATFORM_KTR 
@@ -328,6 +327,7 @@ _Noreturn void thread()
 #endif
 
 	int frames = 0;
+	int recording_active = 0;
 	while (1) {
 
 #ifdef DEBUG_DUMP_RAM
@@ -341,10 +341,16 @@ _Noreturn void thread()
 		if (getHID() & BUTTON_START)
 			*(int *)8192 = 100;
 #endif
+		
+		if (getHID() & BUTTON_Y)
+			recording_active = 27;
+		
+		if ((getHID() & BUTTON_X) && (getHID() & BUTTON_Y))
+			recording_active = 0;
 
 		patchLabel();
-		frames ++;
-		if (getHID() & BUTTON_START) {
+		if (recording_active == 27) {
+			frames++;
 			screenShot(0, frames);
 		}
 	}
