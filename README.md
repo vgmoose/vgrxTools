@@ -1,4 +1,35 @@
-# rxTools - Roxas75 3DS Toolkit
+# vgrxTools
+This is a port of rxTools that attempts to provide software based movie recording on O3DS and N3DS
+
+## How it works
+It takes a screenshot in the background on a separate thread while screen recording is enabled. These are saved to a folder on the SD card, which will then need to be stitched together with video editing software. No sound is recorded, but that can be done with a cheap two way 3.5mm audio cable.
+
+## Goal
+A cheap and free software-based method of recording as an alternative to purchasing a [3ds capture card](http://www.3dsvideocapture.com/product/27)
+
+## Issues
+There are a number of issues at the moment, and it's not clear if they can be worked through:
+- Screenshots take too long to be taken (the write to disk seems to be the bottleneck) as a result, there's one screenshot every 20 seconds or so, where ideally there should be 30 screenshots every second (30fps)
+  - A potential workaround for this issue is to throttle the game itself to accurately record every frame. 
+  - Compressing the (rather large) bitmaps may also help
+  - Also using one file to write to rather than opening and create a new file every time
+- It crashes sometimes during transitions
+- It crashes sometimes if left alone long enough
+  - This may be fixable by being careful with where the screenshot data is stored
+
+## Sample Screenshots
+These screenshots were taken in succession with "no" waiting in between frames. (Pressing Y to start recording) They are currently very choppy, due to the screenshot saving method being slow. Hopefully future optimizations can make it a lot more smooth.
+
+![img](http://imgur.com/GTcrWNI.png)
+![img](http://imgur.com/KsFBwOA.png)
+![img](http://imgur.com/lDdU590.png)
+![img](http://imgur.com/QsKonGp.png)
+![img](http://imgur.com/2LKKF4k.png)
+![img](http://imgur.com/DlMCY6w.png)
+![img](http://imgur.com/XVWAxQz.png)
+
+
+#Original rxTools readme
 
 [![Join the chat at https://gitter.im/roxas75/rxTools](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/roxas75/rxTools?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
